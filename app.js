@@ -12,6 +12,19 @@ const AVATAR_COLORS = [
 
 const EMOJIS = ['😎','💪','🔥','⚡','🚀','🎯','💎','🏅','✨','🌟','👑','🦾','💥','🎆','🎯','💰','📈','🏆','⭐','🔱','🎖️','🏹','🗡️','🛡️','🧲','💫','🎪'];
 
+// Salesroom definitions (static list)
+const SALESROOM_ROOMS = [
+  { id: 1, name: 'Breathless Punta Cana', icon: '🏖️' },
+  { id: 2, name: 'Dreams Flora Resort & Spa', icon: '🌺' },
+  { id: 3, name: 'Dreams Macao Beach Punta Cana', icon: '🌊' },
+  { id: 4, name: 'Dreams Onyx Resort & Spa', icon: '💎' },
+  { id: 5, name: 'Dreams Playa Esmeralda Resort & Spa', icon: '🌴' },
+  { id: 6, name: 'Secrets Cap Cana', icon: '🏝️' },
+  { id: 7, name: 'Secrets Royal Beach Punta Cana', icon: '👑' },
+  { id: 8, name: 'Secrets Tides Punta Cana Resort & Spa', icon: '🌅' },
+  { id: 9, name: 'Sunscape Dominicus La Romana', icon: '☀️' }
+];
+
 // Real team data from the screenshot
 const SAMPLE_DATA = {
   reps: [
@@ -122,23 +135,8 @@ const SAMPLE_DATA = {
       }
     }
   },
-  currentMonth: 'January 2026'
-};
-
-// Salesroom data (9 salesrooms)
-const SALESROOM_DATA = {
-  rooms: [
-    { id: 1, name: 'Breathless Punta Cana', icon: '🏖️' },
-    { id: 2, name: 'Dreams Flora Resort & Spa', icon: '🌺' },
-    { id: 3, name: 'Dreams Macao Beach Punta Cana', icon: '🌊' },
-    { id: 4, name: 'Dreams Onyx Resort & Spa', icon: '💎' },
-    { id: 5, name: 'Dreams Playa Esmeralda Resort & Spa', icon: '🌴' },
-    { id: 6, name: 'Secrets Cap Cana', icon: '🏝️' },
-    { id: 7, name: 'Secrets Royal Beach Punta Cana', icon: '👑' },
-    { id: 8, name: 'Secrets Tides Punta Cana Resort & Spa', icon: '🌅' },
-    { id: 9, name: 'Sunscape Dominicus La Romana', icon: '☀️' }
-  ],
-  months: {
+  currentMonth: 'January 2026',
+  salesrooms: {
     'January 2026': {
       1: { shows: 40, netSales: 2, closePercent: 5.00, volume: 12875 },
       2: { shows: 40, netSales: 5, closePercent: 12.50, volume: 30797 },
@@ -163,12 +161,13 @@ const SALESROOM_DATA = {
     }
   }
 };
-// Pre-fill empty months for salesrooms
+
+// Pre-fill empty months for salesrooms in SAMPLE_DATA
 Object.keys(SAMPLE_DATA.months).forEach(month => {
-  if (!SALESROOM_DATA.months[month]) {
-    SALESROOM_DATA.months[month] = {};
-    SALESROOM_DATA.rooms.forEach(r => {
-      SALESROOM_DATA.months[month][r.id] = { shows: 0, netSales: 0, closePercent: 0, volume: 0 };
+  if (!SAMPLE_DATA.salesrooms[month]) {
+    SAMPLE_DATA.salesrooms[month] = {};
+    SALESROOM_ROOMS.forEach(r => {
+      SAMPLE_DATA.salesrooms[month][r.id] = { shows: 0, netSales: 0, closePercent: 0, volume: 0 };
     });
   }
 });
@@ -198,6 +197,11 @@ function initFirebase() {
       const data = snapshot.val();
       if (data && data.months && data.currentMonth && data.months[data.currentMonth]) {
         state = data;
+        // Ensure salesrooms data exists in state
+        if (!state.salesrooms) {
+          state.salesrooms = JSON.parse(JSON.stringify(SAMPLE_DATA.salesrooms));
+          saveState();
+        }
       } else {
         state = JSON.parse(JSON.stringify(SAMPLE_DATA));
         saveState();
@@ -209,6 +213,7 @@ function initFirebase() {
     }
     renderAll();
     renderAdminRepList();
+    renderAdminSalesroomList();
 
     // Real-time listener: update all connected browsers when data changes
     DB_REF.on('value', snapshot => {
@@ -217,6 +222,7 @@ function initFirebase() {
       state = data;
       renderAll();
       renderAdminRepList();
+      renderAdminSalesroomList();
     });
   }).catch(err => {
     console.error('Firebase connection failed:', err);
@@ -224,6 +230,7 @@ function initFirebase() {
     state = JSON.parse(JSON.stringify(SAMPLE_DATA));
     renderAll();
     renderAdminRepList();
+    renderAdminSalesroomList();
   });
 }
 
@@ -232,6 +239,7 @@ function loadSampleData() {
   saveState();
   renderAll();
   renderAdminRepList();
+  renderAdminSalesroomList();
 }
 
 // ===== INIT =====
@@ -469,10 +477,10 @@ function renderRankRow(rep, rank) {
 }
 
 function getRankedSalesrooms() {
-  const monthData = SALESROOM_DATA.months[state.currentMonth];
+  const monthData = state.salesrooms?.[state.currentMonth];
   if (!monthData) return [];
 
-  const rooms = SALESROOM_DATA.rooms.map(room => {
+  const rooms = SALESROOM_ROOMS.map(room => {
     const data = monthData[room.id] || { shows: 0, netSales: 0, closePercent: 0, volume: 0 };
     return { ...room, ...data };
   });
@@ -615,6 +623,74 @@ function filterAdminReps(query) {
 document.getElementById('admin-search').addEventListener('input', (e) => {
   filterAdminReps(e.target.value.trim());
 });
+
+// ===== ADMIN SALESROOM LIST =====
+function renderAdminSalesroomList() {
+  const listEl = document.getElementById('admin-salesroom-list');
+  if (!listEl) return;
+
+  // Ensure salesrooms data exists for current month
+  if (!state.salesrooms) state.salesrooms = {};
+  if (!state.salesrooms[state.currentMonth]) {
+    state.salesrooms[state.currentMonth] = {};
+    SALESROOM_ROOMS.forEach(r => {
+      state.salesrooms[state.currentMonth][r.id] = { shows: 0, netSales: 0, closePercent: 0, volume: 0 };
+    });
+  }
+
+  const monthData = state.salesrooms[state.currentMonth];
+
+  listEl.innerHTML = SALESROOM_ROOMS.map(room => {
+    const data = monthData[room.id] || { shows: 0, netSales: 0, closePercent: 0, volume: 0 };
+    return `
+    <div class="admin-salesroom-row">
+      <div class="admin-salesroom-header">
+        <span class="admin-salesroom-icon">${room.icon}</span>
+        <span class="admin-salesroom-name">${room.name}</span>
+      </div>
+      <div class="admin-salesroom-fields">
+        <div class="admin-salesroom-field">
+          <label>Shows</label>
+          <input type="number" class="input-field" value="${data.shows}" id="sr-shows-${room.id}">
+        </div>
+        <div class="admin-salesroom-field">
+          <label>Net Sales</label>
+          <input type="number" class="input-field" value="${data.netSales}" id="sr-netsales-${room.id}">
+        </div>
+        <div class="admin-salesroom-field">
+          <label>Close %</label>
+          <input type="number" step="0.01" class="input-field" value="${data.closePercent}" id="sr-close-${room.id}">
+        </div>
+        <div class="admin-salesroom-field">
+          <label>Volume</label>
+          <input type="number" class="input-field" value="${data.volume}" id="sr-volume-${room.id}">
+        </div>
+        <button class="btn-save-score" onclick="updateSalesroom(${room.id})">✓</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSalesroom(roomId) {
+  const shows = parseInt(document.getElementById(`sr-shows-${roomId}`).value) || 0;
+  const netSales = parseInt(document.getElementById(`sr-netsales-${roomId}`).value) || 0;
+  const closePercent = parseFloat(document.getElementById(`sr-close-${roomId}`).value) || 0;
+  const volume = parseInt(document.getElementById(`sr-volume-${roomId}`).value) || 0;
+
+  if (!state.salesrooms) state.salesrooms = {};
+  if (!state.salesrooms[state.currentMonth]) state.salesrooms[state.currentMonth] = {};
+
+  state.salesrooms[state.currentMonth][roomId] = { shows, netSales, closePercent, volume };
+  saveState();
+  renderAll();
+
+  // Flash the save button green
+  const btn = event.target.closest('.btn-save-score');
+  if (btn) {
+    btn.textContent = '✅';
+    setTimeout(() => btn.textContent = '✓', 1000);
+  }
+}
 
 // ===== PHOTO UPLOAD =====
 function triggerPhotoUpload(repId) {
@@ -789,6 +865,8 @@ document.getElementById('month-selector').addEventListener('change', (e) => {
   state.currentMonth = e.target.value;
   saveState();
   renderAll();
+  renderAdminRepList();
+  renderAdminSalesroomList();
 });
 
 // Podium name clicks
@@ -823,6 +901,7 @@ function openAdmin() {
   }
   document.getElementById('admin-modal').classList.remove('hidden');
   renderAdminRepList();
+  renderAdminSalesroomList();
 }
 function closeAdmin() {
   document.getElementById('admin-modal').classList.add('hidden');

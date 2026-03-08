@@ -980,6 +980,69 @@ body::before {
   margin-bottom: var(--space-sm);
 }
 
+/* ===== ADMIN SALESROOM ===== */
+.admin-salesroom-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
+.admin-salesroom-row {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: var(--transition-medium);
+}
+.admin-salesroom-row:hover {
+  border-color: rgba(168, 85, 247, 0.15);
+}
+.admin-salesroom-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.admin-salesroom-icon {
+  font-size: 1.1rem;
+}
+.admin-salesroom-name {
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-salesroom-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.admin-salesroom-field {
+  flex: 1;
+  min-width: 65px;
+}
+.admin-salesroom-field label {
+  display: block;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+.admin-salesroom-field .input-field {
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  width: 100%;
+}
+.admin-salesroom-fields .btn-save-score {
+  align-self: flex-end;
+  margin-bottom: 1px;
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
