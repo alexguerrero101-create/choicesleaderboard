@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Leaderboard – Monthly Competition</title>
+  <meta name="description" content="Gamified sales leaderboard for monthly team competitions. Track rankings, earn badges, and celebrate wins.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+  <div id="app">
+    <!-- ===== NAV BAR ===== -->
+    <nav id="navbar">
+      <div class="nav-left">
+        <div class="logo-icon">🏆</div>
+        <span class="logo-text">SalesBoard</span>
+      </div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-view="podium" id="nav-podium">Players</button>
+        <button class="nav-tab" data-view="salesroom" id="nav-salesroom">Salesroom</button>
+      </div>
+      <div class="nav-right">
+        <select id="month-selector" class="month-select"></select>
+        <button id="admin-toggle" class="btn-admin">⚙️ Admin</button>
+      </div>
+    </nav>
+
+    <!-- ===== PODIUM VIEW ===== -->
+    <section id="view-podium" class="view active">
+      <h1 class="section-title title-gold">Choices Leaderboard</h1>
+      <div class="podium-container">
+        <div class="podium-spot podium-second" id="podium-2">
+          <div class="podium-avatar-wrap silver">
+            <div class="laurel laurel-left">🌿</div>
+            <div class="podium-avatar clickable-name" id="avatar-2"></div>
+            <div class="laurel laurel-right">🌿</div>
+          </div>
+          <div class="podium-badge silver-badge">2<sup>nd</sup></div>
+          <div class="podium-name clickable-name" id="name-2">—</div>
+          <div class="podium-score"><span class="score-star">⭐</span> <span id="score-2">0</span></div>
+          <div class="podium-pillar silver-pillar"></div>
+        </div>
+        <div class="podium-spot podium-first" id="podium-1">
+          <div class="crown-icon">👑</div>
+          <div class="podium-avatar-wrap gold">
+            <div class="laurel laurel-left">🌿</div>
+            <div class="podium-avatar clickable-name" id="avatar-1"></div>
+            <div class="laurel laurel-right">🌿</div>
+          </div>
+          <div class="podium-badge gold-badge">1<sup>st</sup></div>
+          <div class="podium-name clickable-name" id="name-1">—</div>
+          <div class="podium-score"><span class="score-star">⭐</span> <span id="score-1">0</span></div>
+          <div class="podium-pillar gold-pillar"></div>
+        </div>
+        <div class="podium-spot podium-third" id="podium-3">
+          <div class="podium-avatar-wrap bronze">
+            <div class="laurel laurel-left">🌿</div>
+            <div class="podium-avatar clickable-name" id="avatar-3"></div>
+            <div class="laurel laurel-right">🌿</div>
+          </div>
+          <div class="podium-badge bronze-badge">3<sup>rd</sup></div>
+          <div class="podium-name clickable-name" id="name-3">—</div>
+          <div class="podium-score"><span class="score-star">⭐</span> <span id="score-3">0</span></div>
+          <div class="podium-pillar bronze-pillar"></div>
+        </div>
+      </div>
+      <div class="rankings-list" id="podium-rankings-list"></div>
+    </section>
+
+    <!-- ===== SALESROOM VIEW ===== -->
+    <section id="view-salesroom" class="view">
+      <h1 class="section-title title-gold">Salesroom Rankings</h1>
+      <div class="salesroom-scoring-info">
+        <span class="scoring-badge">📊 50% Volume</span>
+        <span class="scoring-badge">🎯 50% Closing %</span>
+      </div>
+      <div class="salesroom-list" id="salesroom-list"></div>
+    </section>
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ===== PLAYER PROFILE (MODAL) ===== -->
+    <div id="profile-modal" class="modal hidden">
+      <div class="modal-overlay" id="profile-overlay"></div>
+      <div class="modal-content profile-modal-content">
+        <button id="profile-close" class="modal-close">&times;</button>
+        <div class="profile-header">
+          <div class="profile-avatar-wrap" id="profile-avatar-wrap">
+            <div class="profile-avatar" id="profile-avatar"></div>
+            <button class="profile-photo-btn" id="profile-photo-upload" title="Upload photo">📷</button>
+          </div>
+          <div class="profile-rank-badge" id="profile-rank-badge"></div>
+          <h2 class="profile-name" id="profile-name">—</h2>
+          <div class="profile-title" id="profile-title"></div>
+        </div>
+        <div class="profile-stats-grid">
+          <div class="profile-stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="profile-revenue">$0</div>
+            <div class="stat-label">Current Revenue</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="profile-sales-count">0</div>
+            <div class="stat-label">Sales (Q)</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="stat-icon">🏅</div>
+            <div class="stat-value" id="profile-current-rank">#—</div>
+            <div class="stat-label">Current Rank</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value" id="profile-rank-change">—</div>
+            <div class="stat-label">Rank Change</div>
+          </div>
+        </div>
+        <div class="profile-section">
+          <h3 class="profile-section-title">🏆 Achievements</h3>
+          <div class="profile-badges" id="profile-badges"></div>
+        </div>
+        <div class="profile-section">
+          <h3 class="profile-section-title">📈 Performance Trend</h3>
+          <div class="profile-chart" id="profile-chart"></div>
+        </div>
+        <div class="profile-section">
+          <h3 class="profile-section-title">📋 Monthly History</h3>
+          <div class="profile-history" id="profile-history"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ADMIN PANEL (MODAL) ===== -->
+    <div id="admin-modal" class="modal hidden">
+      <div class="modal-overlay" id="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>⚙️ Admin Panel</h2>
+          <button id="modal-close" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="admin-section">
+            <h3>Add New Rep</h3>
+            <div class="form-row">
+              <input type="text" id="new-rep-name" placeholder="Rep name" class="input-field">
+              <input type="number" id="new-rep-score" placeholder="Revenue" class="input-field input-small">
+              <input type="number" id="new-rep-qty" placeholder="Q" class="input-field input-tiny">
+              <button id="btn-add-rep" class="btn-action btn-add">+ Add</button>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>Update Scores</h3>
+            <div class="admin-search-wrap">
+              <span class="admin-search-icon">🔍</span>
+              <input type="text" id="admin-search" class="input-field admin-search-input" placeholder="Search players...">
+            </div>
+            <div id="admin-rep-list" class="admin-rep-list"></div>
+          </div>
+          <div class="admin-section">
+            <h3>Quick Actions</h3>
+            <div class="quick-actions">
+              <button id="btn-reset-month" class="btn-action btn-warning">🔄 Reset Month</button>
+              <button id="btn-load-sample" class="btn-action btn-info">📋 Load Team Data</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FIREBASE SDK ===== -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <!-- ===== FIREBASE CONFIG =====
+    SETUP INSTRUCTIONS:
+    1. Go to https://console.firebase.google.com
+    2. Create a new project (or use existing)
+    3. Click "Add app" > Web icon (</>)
+    4. Register app, then copy the firebaseConfig object
+    5. Paste your values below, replacing each placeholder
+    6. In Firebase console: Build > Realtime Database > Create Database > Start in TEST MODE
+  ============================================ -->
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDj90W-0zalfazmk28tpysoD0UCCBBNUYM",
+      authDomain:        "salesboard-bb24a.firebaseapp.com",
+      databaseURL:       "https://salesboard-bb24a-default-rtdb.firebaseio.com",
+      projectId:         "salesboard-bb24a",
+      storageBucket:     "salesboard-bb24a.firebasestorage.app",
+      messagingSenderId: "42208305000",
+      appId:             "1:42208305000:web:f16b73ddb1de86d26600dd"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script src="app.js?v=3"></script>
+</body>
+</html>
