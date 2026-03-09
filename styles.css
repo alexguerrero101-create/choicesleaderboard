@@ -279,6 +279,19 @@ body::before {
   font-weight: var(--font-weight-bold);
 }
 .score-star { font-size: 0.75rem; }
+.podium-deals {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.45);
+  font-weight: var(--font-weight-medium);
+  margin-top: 2px;
+}
+.rank-deals {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: var(--font-weight-medium);
+  margin-left: 4px;
+}
 .podium-pillar {
   width: 100%;
   margin-top: var(--space-sm);

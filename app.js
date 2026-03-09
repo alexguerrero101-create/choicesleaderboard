@@ -477,7 +477,7 @@ function renderPodium() {
     el.setAttribute('data-rep-id', rep.id);
     document.getElementById(`name-${pos}`).textContent = getDisplayName(rep.name);
     document.getElementById(`name-${pos}`).setAttribute('data-rep-id', rep.id);
-    document.getElementById(`score-${pos}`).textContent = formatScore(rep.score);
+    document.getElementById(`score-${pos}`).innerHTML = `${formatScore(rep.score)} <span class="podium-deals">${rep.salesCount} deals</span>`;
   });
 
   const rest = ranked.slice(3);
@@ -499,7 +499,7 @@ function renderRankRow(rep, rank) {
       <div class="rank-avatar" style="background:${getAvatarColor(rep.id)}">${renderAvatar(rep)}</div>
       <div class="rank-info">
         <div class="rank-name">${getDisplayName(rep.name)}</div>
-        <div class="rank-score-value"><span class="score-star">⭐</span> ${formatScore(rep.score)} ${changeHtml}</div>
+        <div class="rank-score-value"><span class="score-star">⭐</span> ${formatScore(rep.score)} <span class="rank-deals">${rep.salesCount} deals</span> ${changeHtml}</div>
         ${badgeHtml}
       </div>
       <div class="sparkline-container">${renderSparkline(sparkData)}</div>
