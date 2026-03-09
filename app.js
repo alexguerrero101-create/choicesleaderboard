@@ -270,6 +270,17 @@ function getShortName(name) {
   return parts[0] + ' ' + parts[parts.length - 1];
 }
 
+// Returns month keys sorted in company-year order: Dec 2025 → Nov 2026
+function getSortedMonthKeys() {
+  const monthOrder = ['December','January','February','March','April','May','June','July','August','September','October','November'];
+  return Object.keys(state.months).sort((a, b) => {
+    const [mA, yA] = [a.split(' ')[0], parseInt(a.split(' ')[1])];
+    const [mB, yB] = [b.split(' ')[0], parseInt(b.split(' ')[1])];
+    if (yA !== yB) return yA - yB;
+    return monthOrder.indexOf(mA) - monthOrder.indexOf(mB);
+  });
+}
+
 function getRankedReps() {
   const monthData = state.months[state.currentMonth];
   if (!monthData) return [];
@@ -304,7 +315,8 @@ function getRankChange(repId) {
 }
 
 function getSparklineData(repId) {
-  const keys = Object.keys(state.months).slice(0, 4).reverse();
+  const sorted = getSortedMonthKeys();
+  const keys = sorted.slice(0, 4);
   return keys.map(key => state.months[key]?.scores[repId] || 0);
 }
 
@@ -444,7 +456,7 @@ function renderPodium() {
     el.innerHTML = renderAvatar(rep, pos === 1 ? 'large' : 'normal');
     el.style.background = getAvatarColor(rep.id);
     el.setAttribute('data-rep-id', rep.id);
-    document.getElementById(`name-${pos}`).textContent = getShortName(rep.name);
+    document.getElementById(`name-${pos}`).textContent = getDisplayName(rep.name);
     document.getElementById(`name-${pos}`).setAttribute('data-rep-id', rep.id);
     document.getElementById(`score-${pos}`).textContent = formatScore(rep.score);
   });
@@ -812,15 +824,19 @@ function openProfile(repId) {
     badgesEl.innerHTML = '<span style="color:rgba(255,255,255,0.3);font-size:0.85rem;">Keep pushing to earn badges! 💪</span>';
   }
 
-  // Chart
-  const monthKeys = Object.keys(state.months).slice(0, 4).reverse();
-  const chartData = monthKeys.map(k => state.months[k]?.scores[repId] || 0);
-  const chartLabels = monthKeys.map(k => k.split(' ')[0].slice(0, 3));
-  document.getElementById('profile-chart').innerHTML = renderLargeChart(chartData, chartLabels);
+  // Chart (sorted Dec → Nov, same as dropdown)
+  const sortedMonths = getSortedMonthKeys();
+  const chartMonths = sortedMonths.slice(0, 6);
+  const chartData = chartMonths.map(k => state.months[k]?.scores[repId] || 0);
+  const chartLabels = chartMonths.map(k => k.split(' ')[0].slice(0, 3));
+  const chartEl = document.getElementById('profile-chart');
+  chartEl.innerHTML = renderLargeChart(chartData, chartLabels);
+  chartEl.classList.remove('expanded');
+  chartEl.onclick = () => chartEl.classList.toggle('expanded');
 
-  // History
+  // History (sorted Dec → Nov, same as dropdown)
   const historyEl = document.getElementById('profile-history');
-  const allMonths = Object.keys(state.months);
+  const allMonths = getSortedMonthKeys();
   historyEl.innerHTML = allMonths.map(monthKey => {
     const mData = state.months[monthKey];
     const mScore = mData?.scores[repId] || 0;
