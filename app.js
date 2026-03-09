@@ -392,15 +392,22 @@ function renderSparkline(data, color = '#a855f7') {
   </svg>`;
 }
 
-function renderLargeChart(data, labels) {
+function renderLargeChart(data, labels, expanded = false) {
   if (!data.length || data.every(v => v === 0)) return '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;">No history yet</div>';
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-  const w = 400, h = 80, pad = 10;
+  const w = 400;
+  const h = expanded ? 180 : 80;
+  const pad = expanded ? 20 : 10;
+  const fontSize = expanded ? 11 : 7;
+  const labelSize = expanded ? 10 : 8;
+  const dotR = expanded ? 5 : 4;
+  const strokeW = expanded ? 3 : 2.5;
+  const valueOffset = expanded ? 12 : 6;
   const points = data.map((v, i) => {
     const x = pad + (i / (data.length - 1)) * (w - pad * 2);
-    const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+    const y = (pad + 10) + (1 - (v - min) / range) * (h - pad * 2 - 20);
     return { x, y, v };
   });
   const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
@@ -409,19 +416,31 @@ function renderLargeChart(data, labels) {
   let labelsHtml = '';
   points.forEach((p, i) => {
     if (labels && labels[i]) {
-      labelsHtml += `<text x="${p.x}" y="${h - 2}" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="8" font-family="Outfit">${labels[i]}</text>`;
+      labelsHtml += `<text x="${p.x}" y="${h - 4}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="${labelSize}" font-family="Outfit" font-weight="500">${labels[i]}</text>`;
     }
-    labelsHtml += `<text x="${p.x}" y="${p.y - 6}" text-anchor="middle" fill="#00e676" font-size="7" font-family="Outfit" font-weight="600">$${(p.v/1000).toFixed(0)}k</text>`;
+    const valText = p.v >= 1000 ? `$${(p.v/1000).toFixed(0)}k` : `$${p.v}`;
+    labelsHtml += `<text x="${p.x}" y="${p.y - valueOffset}" text-anchor="middle" fill="#00e676" font-size="${fontSize}" font-family="Outfit" font-weight="600">${valText}</text>`;
   });
 
-  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  // Grid lines for expanded view
+  let gridHtml = '';
+  if (expanded) {
+    const gridSteps = 4;
+    for (let i = 0; i <= gridSteps; i++) {
+      const gy = (pad + 10) + (i / gridSteps) * (h - pad * 2 - 20);
+      gridHtml += `<line x1="${pad}" y1="${gy}" x2="${w - pad}" y2="${gy}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+    }
+  }
+
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#a855f7" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
     </linearGradient></defs>
+    ${gridHtml}
     <polygon points="${points[0].x},${h-pad-10} ${polyline} ${points[points.length-1].x},${h-pad-10}" fill="url(#${gid})"/>
-    <polyline points="${polyline}" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#a855f7" stroke="#1e1a4a" stroke-width="2"/>`).join('')}
+    <polyline points="${polyline}" fill="none" stroke="#a855f7" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"/>
+    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="${dotR}" fill="#a855f7" stroke="#1e1a4a" stroke-width="2"/>`).join('')}
     ${labelsHtml}
   </svg>`;
 }
@@ -830,9 +849,12 @@ function openProfile(repId) {
   const chartData = chartMonths.map(k => state.months[k]?.scores[repId] || 0);
   const chartLabels = chartMonths.map(k => k.split(' ')[0].slice(0, 3));
   const chartEl = document.getElementById('profile-chart');
-  chartEl.innerHTML = renderLargeChart(chartData, chartLabels);
+  chartEl.innerHTML = renderLargeChart(chartData, chartLabels, false);
   chartEl.classList.remove('expanded');
-  chartEl.onclick = () => chartEl.classList.toggle('expanded');
+  chartEl.onclick = () => {
+    const isExpanded = chartEl.classList.toggle('expanded');
+    chartEl.innerHTML = renderLargeChart(chartData, chartLabels, isExpanded);
+  };
 
   // History (sorted Dec → Nov, same as dropdown)
   const historyEl = document.getElementById('profile-history');
