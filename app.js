@@ -288,7 +288,8 @@ function getRankedReps() {
     .map(rep => ({
       ...rep,
       score: monthData.scores[rep.id] || 0,
-      salesCount: monthData.salesCount?.[rep.id] || 0
+      salesCount: monthData.salesCount?.[rep.id] || 0,
+      shows: monthData.shows?.[rep.id] || 0
     }))
     .sort((a, b) => b.score - a.score);
 }
@@ -457,8 +458,10 @@ function renderAvatar(rep, size = 'normal') {
 
 function renderPodium() {
   const ranked = getRankedReps();
-  if (ranked.length < 3) {
-    document.querySelector('.podium-container').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏆</div><div class="empty-state-text">Add at least 3 reps to see the podium</div></div>`;
+  // For the podium, only non-managers can appear
+  const podiumEligible = ranked.filter(r => !r.isManager);
+  if (podiumEligible.length < 3) {
+    document.querySelector('.podium-container').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏆</div><div class="empty-state-text">Add at least 3 non-manager reps to see the podium</div></div>`;
     return;
   }
 
@@ -469,19 +472,32 @@ function renderPodium() {
     return;
   }
 
+  // Top 3 non-managers go on the podium
+  const podiumReps = podiumEligible.slice(0, 3);
+  const podiumIds = new Set(podiumReps.map(r => r.id));
+
   [1, 2, 3].forEach(pos => {
-    const rep = ranked[pos - 1];
+    const rep = podiumReps[pos - 1];
     const el = document.getElementById(`avatar-${pos}`);
     el.innerHTML = renderAvatar(rep, pos === 1 ? 'large' : 'normal');
     el.style.background = getAvatarColor(rep.id);
     el.setAttribute('data-rep-id', rep.id);
     document.getElementById(`name-${pos}`).textContent = getDisplayName(rep.name);
     document.getElementById(`name-${pos}`).setAttribute('data-rep-id', rep.id);
-    document.getElementById(`score-${pos}`).innerHTML = `${formatScore(rep.score)} <span class="podium-deals">${rep.salesCount} deals</span>`;
+    const closePercent = rep.shows > 0 ? ((rep.salesCount / rep.shows) * 100).toFixed(1) + '%' : '\u2014';
+    document.getElementById(`score-${pos}`).innerHTML = `${formatScore(rep.score)} <span class="podium-deals">${rep.salesCount} deals</span><span class="podium-close">Close: ${closePercent}</span>`;
   });
 
-  const rest = ranked.slice(3);
-  document.getElementById('podium-rankings-list').innerHTML = rest.map((rep, i) => renderRankRow(rep, i + 4)).join('');
+  // Everyone NOT on the podium (including managers) goes in the list below
+  const rest = ranked.filter(r => !podiumIds.has(r.id));
+  let playerRank = 4; // next rank for non-managers
+  document.getElementById('podium-rankings-list').innerHTML = rest.map(rep => {
+    if (rep.isManager) {
+      return renderRankRow(rep, null); // null rank = no number
+    } else {
+      return renderRankRow(rep, playerRank++);
+    }
+  }).join('');
 }
 
 function renderRankRow(rep, rank) {
@@ -494,16 +510,24 @@ function renderRankRow(rep, rank) {
   const badgeHtml = badges.length
     ? `<div class="rank-badges">${badges.slice(0, 2).map(b => `<span class="badge ${b.class}">${b.label}</span>`).join('')}</div>`
     : '';
+  const closePercent = rep.shows > 0 ? ((rep.salesCount / rep.shows) * 100).toFixed(1) : '—';
+  const closeHtml = `<span class="rank-close">Close: ${closePercent}${rep.shows > 0 ? '%' : ''}</span>`;
+  const isManager = rep.isManager || false;
+  const mgrRowClass = isManager ? ' manager-row' : '';
+  const mgrBadge = isManager ? '<span class="rank-mgr-badge">MGR</span>' : '';
+  const rankDisplay = (rank !== null && !isManager)
+    ? `<div class="rank-number">${rank}<sup>${getOrdinal(rank)}</sup></div>`
+    : `<div class="rank-number rank-number-mgr">—</div>`;
   return `
-    <div class="rank-row" data-rank="${rank}" data-rep-id="${rep.id}" style="animation-delay:${(rank-1)*0.04}s" onclick="openProfile(${rep.id})">
+    <div class="rank-row${mgrRowClass}" data-rank="${rank || ''}" data-rep-id="${rep.id}" style="animation-delay:${((rank||1)-1)*0.04}s" onclick="openProfile(${rep.id})">
       <div class="rank-avatar" style="background:${getAvatarColor(rep.id)}">${renderAvatar(rep)}</div>
       <div class="rank-info">
-        <div class="rank-name">${getDisplayName(rep.name)}</div>
-        <div class="rank-score-value"><span class="score-star">⭐</span> ${formatScore(rep.score)} <span class="rank-deals">${rep.salesCount} deals</span> ${changeHtml}</div>
+        <div class="rank-name">${getDisplayName(rep.name)} ${mgrBadge}</div>
+        <div class="rank-score-value"><span class="score-star">⭐</span> ${formatScore(rep.score)} <span class="rank-deals">${rep.salesCount} deals</span> ${closeHtml} ${changeHtml}</div>
         ${badgeHtml}
       </div>
       <div class="sparkline-container">${renderSparkline(sparkData)}</div>
-      <div class="rank-number">${rank}<sup>${getOrdinal(rank)}</sup></div>
+      ${rankDisplay}
     </div>`;
 }
 
@@ -598,15 +622,22 @@ function renderAdminRepList() {
     const avatarContent = rep.photo
       ? `<img src="${rep.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
       : (rep.avatar || getInitials(rep.name));
+    const isManager = rep.isManager || false;
+    const mgrClass = isManager ? ' admin-rep-row-manager' : '';
+    const mgrBtnClass = isManager ? 'btn-manager active' : 'btn-manager';
+    const mgrIcon = isManager ? '👑' : '👤';
+    const mgrTitle = isManager ? 'Manager (excluded from rankings) — click to make player' : 'Player — click to make manager';
     return `
-    <div class="admin-rep-row" data-rep-name="${rep.name.toLowerCase()}">
+    <div class="admin-rep-row${mgrClass}" data-rep-name="${rep.name.toLowerCase()}">
+      <button class="${mgrBtnClass}" onclick="toggleManager(${rep.id})" title="${mgrTitle}">${mgrIcon}</button>
       <div class="admin-avatar-wrap" style="width:32px;height:32px;border-radius:50%;background:${getAvatarColor(rep.id)};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem;overflow:hidden;cursor:pointer;position:relative;" onclick="triggerPhotoUpload(${rep.id})" title="Click to upload photo">
         ${avatarContent}
         <div class="admin-avatar-overlay">📷</div>
       </div>
-      <span class="admin-rep-name">${getShortName(rep.name)}</span>
+      <span class="admin-rep-name">${getShortName(rep.name)}${isManager ? ' <span class="mgr-tag">MGR</span>' : ''}</span>
       <input type="number" class="input-field" value="${monthData?.scores[rep.id] || 0}" id="score-input-${rep.id}" title="Revenue">
-      <input type="number" class="input-field input-tiny" value="${monthData?.salesCount?.[rep.id] || 0}" id="qty-input-${rep.id}" title="Sales count (Q)">
+      <input type="number" class="input-field input-tiny" value="${monthData?.shows?.[rep.id] || 0}" id="shows-input-${rep.id}" title="Shows" placeholder="Shows">
+      <input type="number" class="input-field input-tiny" value="${monthData?.salesCount?.[rep.id] || 0}" id="qty-input-${rep.id}" title="Deals" placeholder="Deals">
       <button class="btn-save-score" onclick="updateScore(${rep.id})">✓</button>
       <button class="btn-delete-rep" onclick="deleteRep(${rep.id})">✕</button>
     </div>`;
@@ -723,6 +754,17 @@ function updateSalesroom(roomId) {
   }
 }
 
+// ===== MANAGER TOGGLE =====
+function toggleManager(repId) {
+  const rep = state.reps.find(r => r.id === repId);
+  if (rep) {
+    rep.isManager = !rep.isManager;
+    saveState();
+    renderAll();
+    renderAdminRepList();
+  }
+}
+
 // ===== PHOTO UPLOAD =====
 function triggerPhotoUpload(repId) {
   if (!adminAuthenticated) {
@@ -741,7 +783,7 @@ function triggerPhotoUpload(repId) {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const maxSize = 150; // small enough for localStorage
+        const maxSize = 400; // higher resolution for sharp display
         let w = img.width, h = img.height;
         if (w > h) { h = (h / w) * maxSize; w = maxSize; }
         else { w = (w / h) * maxSize; h = maxSize; }
@@ -749,7 +791,7 @@ function triggerPhotoUpload(repId) {
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         // Save to state
         const rep = state.reps.find(r => r.id === repId);
         if (rep) {
@@ -774,6 +816,7 @@ function renderAll() {
   renderPodium();
   renderSalesrooms();
   renderMonthSelector();
+  if (typeof updateTrophyWinner === 'function') updateTrophyWinner();
 }
 
 // ===== PLAYER PROFILE =====
@@ -892,6 +935,12 @@ function switchView(viewName) {
   if (viewEl) viewEl.classList.add('active');
   const tabEl = document.querySelector(`.nav-tab[data-view="${viewName}"]`);
   if (tabEl) tabEl.classList.add('active');
+
+  // Lazy-init 3D trophy when salesroom view becomes visible
+  if (viewName === 'salesroom' && typeof THREE !== 'undefined') {
+    // Small delay to ensure the view is visible before initializing WebGL
+    setTimeout(() => initTrophyMini(), 100);
+  }
 }
 
 // ===== EVENT LISTENERS =====
@@ -959,6 +1008,8 @@ document.getElementById('btn-add-rep').addEventListener('click', () => {
   const name = nameInput.value.trim();
   const score = parseInt(scoreInput.value) || 0;
   const qty = parseInt(qtyInput.value) || 0;
+  const showsInput = document.getElementById('new-rep-shows');
+  const shows = parseInt(showsInput?.value) || 0;
 
   if (!name) {
     nameInput.style.borderColor = '#f43f5e';
@@ -974,11 +1025,13 @@ document.getElementById('btn-add-rep').addEventListener('click', () => {
   });
 
   if (!state.months[state.currentMonth]) {
-    state.months[state.currentMonth] = { scores: {}, salesCount: {} };
+    state.months[state.currentMonth] = { scores: {}, salesCount: {}, shows: {} };
   }
   state.months[state.currentMonth].scores[newId] = score;
   if (!state.months[state.currentMonth].salesCount) state.months[state.currentMonth].salesCount = {};
   state.months[state.currentMonth].salesCount[newId] = qty;
+  if (!state.months[state.currentMonth].shows) state.months[state.currentMonth].shows = {};
+  state.months[state.currentMonth].shows[newId] = shows;
 
   saveState();
   renderAll();
@@ -986,24 +1039,29 @@ document.getElementById('btn-add-rep').addEventListener('click', () => {
   nameInput.value = '';
   scoreInput.value = '';
   qtyInput.value = '';
+  if (showsInput) showsInput.value = '';
 });
 
 function updateScore(repId) {
   const scoreInput = document.getElementById(`score-input-${repId}`);
   const qtyInput = document.getElementById(`qty-input-${repId}`);
+  const showsInput = document.getElementById(`shows-input-${repId}`);
   const newScore = parseInt(scoreInput.value) || 0;
   const newQty = parseInt(qtyInput.value) || 0;
+  const newShows = parseInt(showsInput?.value) || 0;
 
   if (!state.months[state.currentMonth]) {
-    state.months[state.currentMonth] = { scores: {}, salesCount: {} };
+    state.months[state.currentMonth] = { scores: {}, salesCount: {}, shows: {} };
   }
   if (!state.months[state.currentMonth].salesCount) state.months[state.currentMonth].salesCount = {};
+  if (!state.months[state.currentMonth].shows) state.months[state.currentMonth].shows = {};
 
   const oldRanked = getRankedReps();
   const oldLeader = oldRanked.length ? oldRanked[0].id : null;
 
   state.months[state.currentMonth].scores[repId] = newScore;
   state.months[state.currentMonth].salesCount[repId] = newQty;
+  state.months[state.currentMonth].shows[repId] = newShows;
   saveState();
   renderAll();
   renderAdminRepList();
@@ -1019,6 +1077,7 @@ function deleteRep(repId) {
   for (const key of Object.keys(state.months)) {
     delete state.months[key].scores[repId];
     if (state.months[key].salesCount) delete state.months[key].salesCount[repId];
+    if (state.months[key].shows) delete state.months[key].shows[repId];
   }
   saveState();
   renderAll();
@@ -1115,10 +1174,15 @@ function launchConfetti() {
 
 // ===== KEYBOARD =====
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closeAdmin(); closeProfile(); }
+  if (e.key === 'Escape') { closeAdmin(); closeProfile(); closeTrophyModal(); }
   if (e.key === '1') switchView('podium');
   if (e.key === '2') switchView('list');
   if (e.key === '3') switchView('celebrate');
 });
 
+// ===== 3D TROPHY =====
+// Trophy code moved to trophy.js (loaded as separate script)
+// Exposes: initTrophyMini(), closeTrophyModal(), updateTrophyWinner()
+
 // ===== INIT =====
+

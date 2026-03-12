@@ -73,12 +73,40 @@
     <!-- ===== SALESROOM VIEW ===== -->
     <section id="view-salesroom" class="view">
       <h1 class="section-title title-gold">Salesroom Rankings</h1>
+
+      <!-- 3D Trophy Display -->
+      <div id="trophy-section">
+        <div id="trophy-container" title="Click to expand">
+          <canvas id="trophy-canvas"></canvas>
+          <div id="trophy-nameplate">
+            <div class="trophy-nameplate-label">🏆 Monthly Champion</div>
+            <div class="trophy-nameplate-name" id="trophy-winner-name">—</div>
+          </div>
+          <div class="trophy-hint">Click to expand • Drag to rotate</div>
+        </div>
+      </div>
+
       <div class="salesroom-scoring-info">
         <span class="scoring-badge">📊 50% Volume</span>
         <span class="scoring-badge">🎯 50% Closing %</span>
       </div>
       <div class="salesroom-list" id="salesroom-list"></div>
     </section>
+    <!-- 3D Trophy Expanded Modal -->
+    <div id="trophy-modal" class="modal hidden">
+      <div class="modal-overlay" id="trophy-modal-overlay"></div>
+      <div class="trophy-modal-content">
+        <button id="trophy-modal-close" class="modal-close">×</button>
+        <div class="trophy-modal-title">🏆 Monthly Champion Trophy</div>
+        <canvas id="trophy-modal-canvas"></canvas>
+        <div id="trophy-modal-nameplate">
+          <div class="trophy-nameplate-label">Award of Excellence</div>
+          <div class="trophy-nameplate-name" id="trophy-modal-winner-name">—</div>
+        </div>
+        <div class="trophy-modal-hint">Drag or swipe to rotate • Scroll to zoom</div>
+      </div>
+    </div>
+
     <canvas id="confetti-canvas"></canvas>
 
     <!-- ===== PLAYER PROFILE (MODAL) ===== -->
@@ -146,7 +174,8 @@
             <div class="form-row">
               <input type="text" id="new-rep-name" placeholder="Rep name" class="input-field">
               <input type="number" id="new-rep-score" placeholder="Revenue" class="input-field input-small">
-              <input type="number" id="new-rep-qty" placeholder="Q" class="input-field input-tiny">
+              <input type="number" id="new-rep-shows" placeholder="Shows" class="input-field input-tiny">
+              <input type="number" id="new-rep-qty" placeholder="Deals" class="input-field input-tiny">
               <button id="btn-add-rep" class="btn-action btn-add">+ Add</button>
             </div>
           </div>
@@ -174,6 +203,11 @@
     </div>
   </div>
 
+  <!-- ===== THREE.JS FOR 3D TROPHY ===== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
   <!-- ===== FIREBASE SDK ===== -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -200,6 +234,7 @@
     firebase.initializeApp(firebaseConfig);
   </script>
 
-  <script src="app.js?v=20260308"></script>
+  <script src="app.js?v=20260312e"></script>
+  <script src="trophy.js?v=20260312p"></script>
 </body>
 </html>
