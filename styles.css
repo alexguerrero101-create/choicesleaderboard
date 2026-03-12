@@ -1164,6 +1164,16 @@ body::before {
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease, border-color 0.3s ease;
   overflow: hidden;
 }
+/* Pop-in entrance animation */
+#trophy-container.trophy-pop {
+  animation: trophyPopIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes trophyPopIn {
+  0%   { opacity: 0; transform: scale(0.3) translateY(60px); }
+  50%  { opacity: 1; transform: scale(1.08) translateY(-10px); }
+  70%  { transform: scale(0.95) translateY(3px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
 #trophy-container:hover {
   transform: scale(1.03);
   border-color: rgba(255, 215, 0, 0.35);
@@ -1176,20 +1186,31 @@ body::before {
 }
 #trophy-nameplate {
   position: absolute;
-  bottom: 40px;
+  bottom: 36px;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
   z-index: 10;
   pointer-events: none;
 }
-.trophy-nameplate-label {
-  font-size: 0.65rem;
+/* CONGRATS label — animated gold glow */
+.trophy-congrats-label {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-black);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255, 215, 0, 0.6);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: 2px;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+  animation: congratsPulse 2s ease-in-out infinite;
+  margin-bottom: 4px;
+}
+@keyframes congratsPulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5)); }
+  50% { filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.9)); }
 }
 .trophy-nameplate-name {
   font-size: 0.85rem;
@@ -1225,7 +1246,7 @@ body::before {
   border: 1px solid rgba(255, 215, 0, 0.2);
   width: 92%;
   max-width: 600px;
-  padding: var(--space-lg);
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
   text-align: center;
   box-shadow: 0 0 80px rgba(255, 215, 0, 0.1), var(--shadow-lg);
   animation: trophyModalIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1256,14 +1277,38 @@ body::before {
   color: #fff;
   background: rgba(255,255,255,0.1);
 }
-.trophy-modal-title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-bold);
-  background: var(--gradient-gold);
+/* Modal CONGRATS heading */
+.trophy-modal-congrats {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: var(--font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #ffd700, #ffaa00, #ffe066, #ffd700);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: var(--space-sm);
+  animation: congratsShimmer 3s ease-in-out infinite, congratsPulseModal 2s ease-in-out infinite;
+  margin-bottom: 4px;
+  padding-top: var(--space-sm);
+}
+@keyframes congratsShimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes congratsPulseModal {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8)); transform: scale(1.03); }
+}
+/* Modal winner name */
+.trophy-modal-winner {
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  margin-bottom: var(--space-md);
 }
 #trophy-modal-canvas {
   display: block;
@@ -1271,20 +1316,10 @@ body::before {
   margin-bottom: var(--space-sm);
   max-width: 100%;
 }
-#trophy-modal-nameplate {
-  margin-bottom: var(--space-sm);
-}
-#trophy-modal-nameplate .trophy-nameplate-label {
-  font-size: 0.7rem;
-  color: rgba(255, 215, 0, 0.7);
-}
-#trophy-modal-nameplate .trophy-nameplate-name {
-  font-size: 1.1rem;
-  max-width: 100%;
-}
 .trophy-modal-hint {
   font-size: 0.65rem;
   color: rgba(255,255,255,0.25);
+  margin-top: var(--space-xs);
 }
 
 /* ===== SCROLLBAR ===== */
@@ -1325,9 +1360,12 @@ body::before {
   .stat-value { font-size: 1rem; }
   .profile-section { padding: 0 var(--space-md) var(--space-md); }
   #trophy-container { width: 260px; height: 280px; }
+  .trophy-congrats-label { font-size: 0.9rem; }
   .trophy-nameplate-name { font-size: 0.75rem; max-width: 200px; }
   #trophy-modal-canvas { max-height: 320px; }
   .trophy-modal-content { padding: var(--space-md); }
+  .trophy-modal-congrats { font-size: 1.4rem; }
+  .trophy-modal-winner { font-size: 1rem; }
 }
 
 .empty-state { text-align: center; padding: var(--space-3xl) var(--space-lg); color: rgba(255,255,255,0.3); }

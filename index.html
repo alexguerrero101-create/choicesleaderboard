@@ -76,10 +76,10 @@
 
       <!-- 3D Trophy Display -->
       <div id="trophy-section">
-        <div id="trophy-container" title="Click to expand">
+        <div id="trophy-container" class="trophy-pop" title="Click to expand">
           <canvas id="trophy-canvas"></canvas>
           <div id="trophy-nameplate">
-            <div class="trophy-nameplate-label">🏆 Monthly Champion</div>
+            <div class="trophy-congrats-label">🎉 CONGRATS!!!!</div>
             <div class="trophy-nameplate-name" id="trophy-winner-name">—</div>
           </div>
           <div class="trophy-hint">Click to expand • Drag to rotate</div>
@@ -97,12 +97,9 @@
       <div class="modal-overlay" id="trophy-modal-overlay"></div>
       <div class="trophy-modal-content">
         <button id="trophy-modal-close" class="modal-close">×</button>
-        <div class="trophy-modal-title">🏆 Monthly Champion Trophy</div>
+        <div class="trophy-modal-congrats">🎉 CONGRATS!!!!</div>
+        <div class="trophy-modal-winner" id="trophy-modal-winner-name">—</div>
         <canvas id="trophy-modal-canvas"></canvas>
-        <div id="trophy-modal-nameplate">
-          <div class="trophy-nameplate-label">Award of Excellence</div>
-          <div class="trophy-nameplate-name" id="trophy-modal-winner-name">—</div>
-        </div>
         <div class="trophy-modal-hint">Drag or swipe to rotate • Scroll to zoom</div>
       </div>
     </div>

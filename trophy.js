@@ -263,8 +263,10 @@
     } else {
       modalScene.onResize();
     }
+    // Sync winner name to modal
     var name = document.getElementById('trophy-winner-name').textContent;
-    document.getElementById('trophy-modal-winner-name').textContent = name;
+    var modalNameEl = document.getElementById('trophy-modal-winner-name');
+    if (modalNameEl) modalNameEl.textContent = name;
   }
 
   function closeModal() {
