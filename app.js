@@ -211,6 +211,13 @@ function initFirebase() {
       state = JSON.parse(JSON.stringify(SAMPLE_DATA));
       saveState();
     }
+
+    // Auto-detect the real current month so the page opens to it
+    const realMonth = getCurrentMonthKey();
+    if (state.months[realMonth]) {
+      state.currentMonth = realMonth;
+    }
+
     renderAll();
     renderAdminRepList();
     renderAdminSalesroomList();
@@ -219,7 +226,12 @@ function initFirebase() {
     DB_REF.on('value', snapshot => {
       const data = snapshot.val();
       if (!data) return;
+      // Preserve the currently selected month across real-time updates
+      const selectedMonth = state ? state.currentMonth : null;
       state = data;
+      if (selectedMonth && state.months[selectedMonth]) {
+        state.currentMonth = selectedMonth;
+      }
       renderAll();
       renderAdminRepList();
       renderAdminSalesroomList();
@@ -228,6 +240,10 @@ function initFirebase() {
     console.error('Firebase connection failed:', err);
     // Graceful fallback: use sample data locally if Firebase fails
     state = JSON.parse(JSON.stringify(SAMPLE_DATA));
+    const realMonth = getCurrentMonthKey();
+    if (state.months[realMonth]) {
+      state.currentMonth = realMonth;
+    }
     renderAll();
     renderAdminRepList();
     renderAdminSalesroomList();
@@ -246,6 +262,11 @@ function loadSampleData() {
 initFirebase();
 
 // ===== UTILITY =====
+function getCurrentMonthKey() {
+  const now = new Date();
+  const monthName = now.toLocaleString('en-US', { month: 'long' });
+  return `${monthName} ${now.getFullYear()}`;
+}
 function getInitials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
@@ -317,7 +338,11 @@ function getRankChange(repId) {
 
 function getSparklineData(repId) {
   const sorted = getSortedMonthKeys();
-  const keys = sorted.slice(0, 4);
+  // Show up to 4 months ending at (and including) the currently selected month
+  const currentIdx = sorted.indexOf(state.currentMonth);
+  const endIdx = currentIdx >= 0 ? currentIdx + 1 : sorted.length;
+  const startIdx = Math.max(0, endIdx - 4);
+  const keys = sorted.slice(startIdx, endIdx);
   return keys.map(key => state.months[key]?.scores[repId] || 0);
 }
 
@@ -886,9 +911,12 @@ function openProfile(repId) {
     badgesEl.innerHTML = '<span style="color:rgba(255,255,255,0.3);font-size:0.85rem;">Keep pushing to earn badges! 💪</span>';
   }
 
-  // Chart (sorted Dec → Nov, same as dropdown)
+  // Chart — show up to 6 months ending at the currently selected month
   const sortedMonths = getSortedMonthKeys();
-  const chartMonths = sortedMonths.slice(0, 6);
+  const curIdx = sortedMonths.indexOf(state.currentMonth);
+  const chartEnd = curIdx >= 0 ? curIdx + 1 : sortedMonths.length;
+  const chartStart = Math.max(0, chartEnd - 6);
+  const chartMonths = sortedMonths.slice(chartStart, chartEnd);
   const chartData = chartMonths.map(k => state.months[k]?.scores[repId] || 0);
   const chartLabels = chartMonths.map(k => k.split(' ')[0].slice(0, 3));
   const chartEl = document.getElementById('profile-chart');
