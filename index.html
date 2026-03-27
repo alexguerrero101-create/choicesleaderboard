@@ -163,6 +163,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2>⚙️ Admin Panel</h2>
+          <div id="admin-month-badge" style="background:linear-gradient(135deg,#7c3aed,#a855f7);padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:700;color:#fff;letter-spacing:0.3px;">📅 March 2026</div>
           <button id="modal-close" class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
@@ -177,7 +178,7 @@
             </div>
           </div>
           <div class="admin-section">
-            <h3>Update Scores</h3>
+            <h3>Update Scores — <span id="admin-scores-month" style="color:#a855f7;"></span></h3>
             <div class="admin-search-wrap">
               <span class="admin-search-icon">🔍</span>
               <input type="text" id="admin-search" class="input-field admin-search-input" placeholder="Search players...">
@@ -185,7 +186,7 @@
             <div id="admin-rep-list" class="admin-rep-list"></div>
           </div>
           <div class="admin-section">
-            <h3>🏨 Salesroom Data</h3>
+            <h3>🏨 Salesroom Data — <span id="admin-salesroom-month" style="color:#a855f7;"></span></h3>
             <div id="admin-salesroom-list" class="admin-salesroom-list"></div>
           </div>
           <div class="admin-section">
@@ -231,7 +232,7 @@
     firebase.initializeApp(firebaseConfig);
   </script>
 
-  <script src="app.js?v=20260326a"></script>
-  <script src="trophy.js?v=20260326a"></script>
+  <script src="app.js?v=20260326b"></script>
+  <script src="trophy.js?v=20260326b"></script>
 </body>
 </html>

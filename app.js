@@ -643,6 +643,14 @@ function renderMonthSelector() {
 function renderAdminRepList() {
   const listEl = document.getElementById('admin-rep-list');
   const monthData = state.months[state.currentMonth];
+
+  // Update admin month indicators
+  const badge = document.getElementById('admin-month-badge');
+  if (badge) badge.textContent = '📅 ' + state.currentMonth;
+  const scoresMonth = document.getElementById('admin-scores-month');
+  if (scoresMonth) scoresMonth.textContent = state.currentMonth;
+  const srMonth = document.getElementById('admin-salesroom-month');
+  if (srMonth) srMonth.textContent = state.currentMonth;
   listEl.innerHTML = state.reps.map(rep => {
     const avatarContent = rep.photo
       ? `<img src="${rep.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
