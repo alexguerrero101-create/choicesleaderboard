@@ -179,6 +179,58 @@ const DB_REF = db.ref('salesboard');
 let state = null;
 let _saveQueued = false;
 
+// Firebase converts objects with sequential numeric keys into arrays.
+// e.g. {1: 0, 2: 0, 3: 0} becomes [null, 0, 0, 0]
+// This normalizer converts them back to proper objects.
+function normalizeState(data) {
+  if (!data || !data.months) return data;
+
+  // Fix month score/salesCount/shows arrays
+  for (const monthKey of Object.keys(data.months)) {
+    const month = data.months[monthKey];
+    if (!month) continue;
+    ['scores', 'salesCount', 'shows'].forEach(field => {
+      if (Array.isArray(month[field])) {
+        const obj = {};
+        month[field].forEach((val, idx) => {
+          if (idx > 0 && val !== null && val !== undefined) {
+            obj[idx] = val;
+          }
+        });
+        month[field] = obj;
+      }
+      // Ensure the field exists as an object
+      if (!month[field] || typeof month[field] !== 'object') {
+        month[field] = {};
+      }
+    });
+  }
+
+  // Fix salesrooms arrays
+  if (data.salesrooms) {
+    for (const monthKey of Object.keys(data.salesrooms)) {
+      const srMonth = data.salesrooms[monthKey];
+      if (Array.isArray(srMonth)) {
+        const obj = {};
+        srMonth.forEach((val, idx) => {
+          if (idx > 0 && val !== null && val !== undefined) {
+            obj[idx] = val;
+          }
+        });
+        data.salesrooms[monthKey] = obj;
+      }
+    }
+  }
+
+  // Fix reps array (should stay as array, but ensure IDs are preserved)
+  if (Array.isArray(data.reps)) {
+    // reps should be an array — that's fine, but filter out null entries
+    data.reps = data.reps.filter(r => r !== null && r !== undefined);
+  }
+
+  return data;
+}
+
 // Save entire state to Firebase (debounced to avoid excessive writes)
 function saveState() {
   if (_saveQueued) return;
@@ -186,7 +238,10 @@ function saveState() {
   setTimeout(() => {
     _saveQueued = false;
     if (!state) return;
-    DB_REF.set(state).catch(err => console.warn('Firebase save failed:', err));
+    // Don't save currentMonth to Firebase — each browser picks its own
+    const toSave = { ...state };
+    delete toSave.currentMonth;
+    DB_REF.update(toSave).catch(err => console.warn('Firebase save failed:', err));
   }, 300);
 }
 
@@ -195,8 +250,8 @@ function initFirebase() {
   DB_REF.get().then(snapshot => {
     if (snapshot.exists()) {
       const data = snapshot.val();
-      if (data && data.months && data.currentMonth && data.months[data.currentMonth]) {
-        state = data;
+      if (data && data.months) {
+        state = normalizeState(data);
         // Ensure salesrooms data exists in state
         if (!state.salesrooms) {
           state.salesrooms = JSON.parse(JSON.stringify(SAMPLE_DATA.salesrooms));
@@ -214,8 +269,11 @@ function initFirebase() {
 
     // Auto-detect the real current month so the page opens to it
     const realMonth = getCurrentMonthKey();
-    if (state.months[realMonth]) {
+    if (state.months && state.months[realMonth]) {
       state.currentMonth = realMonth;
+    } else {
+      // Fallback: use the latest month with data
+      state.currentMonth = state.currentMonth || Object.keys(state.months)[0];
     }
 
     renderAll();
@@ -228,7 +286,7 @@ function initFirebase() {
       if (!data) return;
       // Preserve the currently selected month across real-time updates
       const selectedMonth = state ? state.currentMonth : null;
-      state = data;
+      state = normalizeState(data);
       if (selectedMonth && state.months[selectedMonth]) {
         state.currentMonth = selectedMonth;
       }
