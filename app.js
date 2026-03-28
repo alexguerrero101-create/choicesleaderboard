@@ -651,7 +651,15 @@ function renderAdminRepList() {
   if (scoresMonth) scoresMonth.textContent = state.currentMonth;
   const srMonth = document.getElementById('admin-salesroom-month');
   if (srMonth) srMonth.textContent = state.currentMonth;
-  listEl.innerHTML = state.reps.map(rep => {
+
+  // Sort reps by volume (score) descending for admin view
+  const sortedReps = [...state.reps].sort((a, b) => {
+    const scoreA = monthData?.scores[a.id] || 0;
+    const scoreB = monthData?.scores[b.id] || 0;
+    return scoreB - scoreA;
+  });
+
+  listEl.innerHTML = sortedReps.map(rep => {
     const avatarContent = rep.photo
       ? `<img src="${rep.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
       : (rep.avatar || getInitials(rep.name));
@@ -1010,8 +1018,37 @@ document.getElementById('modal-overlay').addEventListener('click', closeAdmin);
 document.getElementById('profile-close').addEventListener('click', closeProfile);
 document.getElementById('profile-overlay').addEventListener('click', closeProfile);
 
-const ADMIN_PASSWORD = 'ChoicesTeam2026';
+let ADMIN_PASSWORD = 'ChoicesTeam2026';
 let adminAuthenticated = false;
+
+// Load password from Firebase (persists across sessions)
+db.ref('adminPassword').get().then(snap => {
+  if (snap.exists()) ADMIN_PASSWORD = snap.val();
+});
+db.ref('adminPassword').on('value', snap => {
+  if (snap.exists()) ADMIN_PASSWORD = snap.val();
+});
+
+function changeAdminPassword() {
+  const currentPw = prompt('🔒 Enter current password:');
+  if (currentPw !== ADMIN_PASSWORD) {
+    alert('❌ Current password is incorrect.');
+    return;
+  }
+  const newPw = prompt('🔑 Enter new password:');
+  if (!newPw || newPw.trim().length < 4) {
+    alert('❌ Password must be at least 4 characters.');
+    return;
+  }
+  const confirmPw = prompt('🔑 Confirm new password:');
+  if (newPw !== confirmPw) {
+    alert('❌ Passwords do not match.');
+    return;
+  }
+  ADMIN_PASSWORD = newPw.trim();
+  db.ref('adminPassword').set(ADMIN_PASSWORD);
+  alert('✅ Password changed successfully!');
+}
 
 function openAdmin() {
   if (!adminAuthenticated) {
